@@ -7,6 +7,8 @@
   [& args]
   (println "Hello, World!"))
 
+;(use '[clojure.string :as string])
+
 (defn word-list []
   '("OX","CAT","TOY","AT","DOG","CATAPULT","T"))
 
@@ -120,15 +122,13 @@
      {arg (character-count matrix arg)}) characters)
   (reduce merge)))
 
-
 (defn word-occurences [matrix words]
-  (let [sequences (get-all-sequences matrix)
-        all-words (concat words (reverse-words words))]
+  (let [sequences (get-all-sequences matrix)]
     (->> (map
           (fn [arg] {arg
                      (+ (word-occurence sequences (string/reverse arg))
                         (word-occurence sequences arg))})
-          all-words)
+          words)
          (reduce merge))))
 
 (defn reverse-words [words]
@@ -143,7 +143,7 @@
 (defn find-words [matrix words]
   (let [single-char (single-char-words words)
         multi-char (multi-char-words words)]
-    (conj (word-occurences matrix words)
-          (character-occurences matrix words))))
+    (conj (word-occurences matrix multi-char)
+         (character-occurences matrix single-char))))
 
 (find-words (test-matrix) (word-list))
