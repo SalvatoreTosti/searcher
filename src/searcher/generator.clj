@@ -13,14 +13,30 @@
   (into [] (map random-letter coll)))
 
 (defn nil-array [n]
-   (into [] (repeatedly n (fn [] nil))))
+  (into [] (repeatedly n (fn [] nil))))
 
 (defn nil-matrix [columns rows]
   {:matrix (into [] (repeatedly columns #(nil-array rows))) :view :column})
 
 (defn test-matrix []
   ;{:matrix (into [] (map random-letter-coll [["C" "A" "T" "X"] ["X" "Z" "T" "X"] ["Y" "O" "T" "X"]])) :view :column})
-{:matrix [["C" "A" "T" "X"] ["X" "Z" "T" "X"] ["Y" "O" "T" "X"]] :view :column})
+  {:matrix [["C" "A" "T" "X"] ["X" "Z" "T" "X"] ["Y" "O" "T" "X"]] :view :column})
+
+(defn valid-matrix [matrix words]
+  (let [dimensions [(count (:matrix matrix)) (count (first (:matrix matrix)))]
+        larger-side (apply max dimensions)
+        smaller-side  (apply min dimensions)
+        max-word-size (apply max (map count words))]
+    (if
+      (>= max-word-size larger-side)
+      (cond
+       (> (count words) smaller-side) false
+       (> max-word-size larger-side) false
+       :else true)
+      (cond
+       (> (count words) larger-side) false
+       (> max-word-size smaller-side) false
+       :else true))))
 
 (def test-matrix-1
   (atom (test-matrix)))
@@ -71,13 +87,13 @@
    (neg? start-col) nil
    (neg? start-row) nil
    (> start-col (count matrix)) nil
-  :else
-  (let [result (rec-replace
-                (get-col matrix start-col)
-                (string/split word  #"")
-                start-row)]
-    (if (nil? result) nil
-      (assoc-in matrix [:matrix start-col] result)))))
+   :else
+   (let [result (rec-replace
+                 (get-col matrix start-col)
+                 (string/split word  #"")
+                 start-row)]
+     (if (nil? result) nil
+       (assoc-in matrix [:matrix start-col] result)))))
 
 (defn traverse-row [matrix, n]
   (map #(nth % n) matrix))
