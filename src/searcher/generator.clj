@@ -22,21 +22,73 @@
   ;{:matrix (into [] (map random-letter-coll [["C" "A" "T" "X"] ["X" "Z" "T" "X"] ["Y" "O" "T" "X"]])) :view :column})
   {:matrix [["C" "A" "T" "X"] ["X" "Z" "T" "X"] ["Y" "O" "T" "X"]] :view :column})
 
-(defn valid-matrix [matrix words]
-  (let [dimensions [(count (:matrix matrix)) (count (first (:matrix matrix)))]
-        larger-side (apply max dimensions)
-        smaller-side  (apply min dimensions)
-        max-word-size (apply max (map count words))]
+(defn- words-can-fit?
+  [larger-side smaller-side max-word-size word-count]
+  (if
+    (>= max-word-size larger-side)
+    (cond
+     (> word-count smaller-side) false
+     (> max-word-size larger-side) false
+     :else true)
+    (cond
+     (> word-count larger-side) false
+     (> max-word-size smaller-side) false
+     :else true)))
+
+
+(defn valid? [matrix words]
+  (cond
+   (nil? matrix) true
+   (empty matrix) true
+   (nil? words) true
+   (empty? words) true
+   :else
+   (let [dimensions [(count (:matrix matrix)) (count (first (:matrix matrix)))]
+         larger-side (apply max dimensions)
+         smaller-side  (apply min dimensions)
+         max-word-size (apply max (map count words))
+         word-count (count words)
+         char-count-diff (- (reduce + (map count (:matrix (test-matrix)))) (reduce + (map count words)))]
+     (words-can-fit?
+      larger-side
+      smaller-side
+      max-word-size
+      word-count))))
+
+(defn non-zeros [coll]
+  (cond
+   (nil? coll) nil
+   (empty? coll) nil
+   :else
+   (->> coll
+        (filter #(not (zero? %))))))
+
+(defn nil-or-empty? [x]
+  (or (nil? x) (empty? x)))
+
+(defn min-non-zeros [coll]
+  (let [results (non-zeros coll)]
     (if
-      (>= max-word-size larger-side)
-      (cond
-       (> (count words) smaller-side) false
-       (> max-word-size larger-side) false
-       :else true)
-      (cond
-       (> (count words) larger-side) false
-       (> max-word-size smaller-side) false
-       :else true))))
+      (nil-or-empty? results) nil
+      (apply min results))))
+
+(defn get-dimensions [raw-matrix]
+  (let [dimensions (-> '()
+      (conj (count raw-matrix))
+      (conj (count (first raw-matrix)))
+      (sort))]
+    {:small (first dimensions) :large (second dimensions)}))
+
+(defn get-free-matrix [raw-matrix words]
+  (let [dimensions (get-dimensions raw-matrix)
+        sorted-words (reverse (sort-by count words))
+        free-space-counts (map #(- (dimensions :large) (count %)) sorted-words)
+        available-free-counts (take (dimensions :large) free-space-counts) ;the remaining free space available in the matrix
+        remaining-words (drop (dimensions :large) sorted-words)
+        minimum-free-count (min-non-zeros available-free-counts)
+        count-free-count (count (non-zeros available-free-counts))]
+  nil
+    ))
 
 (def test-matrix-1
   (atom (test-matrix)))
