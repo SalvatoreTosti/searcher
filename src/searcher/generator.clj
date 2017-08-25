@@ -22,6 +22,13 @@
   ;{:matrix (into [] (map random-letter-coll [["C" "A" "T" "X"] ["X" "Z" "T" "X"] ["Y" "O" "T" "X"]])) :view :column})
   {:matrix [["C" "A" "T" "X"] ["X" "Z" "T" "X"] ["Y" "O" "T" "X"]] :view :column})
 
+(defn nil-or-empty?
+  [& args]
+    (->> (map #(or (nil? %) (empty? %)) args)
+         (some true?)
+         (nil?)
+         (not)))
+
 (defn- words-can-fit?
   [larger-side smaller-side max-word-size word-count]
   (if
@@ -35,6 +42,50 @@
      (> max-word-size smaller-side) false
      :else true)))
 
+(defn- nil-replace-concat [coll-a coll-b]
+  "Replaces trailing nils in coll-a with items in coll-b"
+  (let [nil-count (count (filter nil? coll-a))]
+    (if (> (count coll-b) nil-count) nil
+      (-> (filter #(not (nil? %)) coll-a)
+          (concat coll-b)
+          (concat (nil-array (- nil-count (count coll-b))))))))
+
+(defn- fit-words-rec [column words]
+  "Places as many words as possible from the 'words' coll into the column coll.
+  Returns map with new column as :column and remaining words as :words."
+  (if (nil-or-empty? column words) {:column column :words words}
+    (let [replace-coll (nil-replace-concat column (string/split (first words) #"" ))]
+      (if (nil? replace-coll) {:column column :words words}
+        (fit-words-rec replace-coll (rest words))))))
+
+(defn- compress-column-rec [columns words result]
+  (if (empty? columns) {:result result :remaining-words words}
+    (let [compressed-column (fit-words-rec (first columns) words)]
+      (compress-column-rec
+       (rest columns)
+       (compressed-column :words)
+       (conj result (compressed-column :column))))))
+
+(defn- find-best-fit [columns word]
+  )
+
+(sort-by count ["a" "bc" "d"])
+
+(compress-column-rec
+ (sort-by count
+          [[nil] [nil nil] [nil nil nil]])
+ (sort-by count ["a" "bc" "d" "dd"])
+ [])
+(compress [[nil] [nil nil] [nil nil nil]] ["ad" "bc" "d"])
+
+(defn compress [columns words]
+  (compress-column-rec columns words []))
+
+(defn testr [free-space words]
+  (let [word-count (count words)
+        space-count (count free-space)]
+    (cond
+     (< word-count space-count) false))) ;there's fewer spaces for words than remaining spaces
 
 (defn valid? [matrix words]
   (cond
@@ -63,8 +114,6 @@
    (->> coll
         (filter #(not (zero? %))))))
 
-(defn nil-or-empty? [x]
-  (or (nil? x) (empty? x)))
 
 (defn min-non-zeros [coll]
   (let [results (non-zeros coll)]
